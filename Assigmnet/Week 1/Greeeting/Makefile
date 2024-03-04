@@ -1,41 +1,50 @@
-# Compiler
-CC = gcc
+# Define the compiler and flags
+CC := gcc
+CFLAGS := -Wall -Wextra -g
 
-# Directories
-SRC_DIR = src
-BUILD_DIR = build
-TEST_DIR = test
+# Define the source and build directories
+SRC_DIR := src
+BUILD_DIR := build
+LIB_DIR := lib
 
-# Source files
-SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
-TEST_FILES = $(wildcard $(TEST_DIR)/*.c)
+# Get a list of all the source files
+SRCS := $(wildcard $(SRC_DIR)/*.c)
 
-# Object files
-OBJ_FILES = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRC_FILES))
-OBJ_FILES_TEST = $(patsubst $(TEST_DIR)/%.c,$(BUILD_DIR)/%.o,$(TEST_FILES)) # Change object file path for test files
+# Generate a list of object files by replacing the .c extension with .o
+OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRCS))
 
-# Executables
-EXECUTABLE = $(BUILD_DIR)/testing
-TEST_EXECUTABLE = $(BUILD_DIR)/test
+# Define the target executable
+TARGET := $(BUILD_DIR)/executable
 
 # Default target
-all: $(EXECUTABLE) $(TEST_EXECUTABLE)
+all: $(TARGET)
 
-# Compile source files into object files
+# Rule to compile each source file into an object file
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-	$(CC) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
-# Compile test files into object files
-$(BUILD_DIR)/%.o: $(TEST_DIR)/%.c
-	$(CC) -c $< -o $@
+# Rule to link all the object files into the target executable
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) $^ -o $@
 
-# Link object files into executables
-$(EXECUTABLE): $(OBJ_FILES)
-	$(CC) $^ -o $@
+# Rule to compile the source file into the object file for the dynamic library
+$(BUILD_DIR)/greeting.o: $(SRC_DIR)/greeting.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(TEST_EXECUTABLE): $(OBJ_FILES_TEST)
-	$(CC) $^ -o $@
+# Rule to create dynamic library
+$(LIB_DIR)/libgreeting.so: $(BUILD_DIR)/greeting.o
+	$(CC) -shared -o $@ $<
 
-# Clean build directory
+# Create the build directory if it does not exist
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+# Create the lib directory if it does not exist
+$(LIB_DIR):
+	mkdir -p $(LIB_DIR)
+
+# Clean target to remove all generated files
 clean:
 	rm -rf $(BUILD_DIR)
+
+.PHONY: all clean
